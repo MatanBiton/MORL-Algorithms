@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version", "dependencies"]
+name="morl-algorithms"
+authors = [
+    { name="Matan Biton", email="matan.biton@campus.technion.ac.il" }
+]
+description = "An implementation of Multi-Objective Reinforcement Learning Algorithms"
+requires-python = ">=3.11"
+license = { file = "LICENSE.txt" }
+
+[project.urls]
+Repository = "https://github.com/MatanBiton/MORL-Algorithms"
+
+[tool.setuptools.dynamic]
+version = {attr = "morl_algorithms.__version__"}
+dependencies = {file = "requirements.txt"}
