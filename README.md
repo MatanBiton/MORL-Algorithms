@@ -1,6 +1,6 @@
 # MORL-Algorithms
 
-A comprehensive implementation of Multi-Objective Reinforcement Learning (MORL) algorithms, featuring state-of-the-art methods for training agents to optimize multiple conflicting objectives simultaneously.
+A comprehensive implementation of Multi-Objective Reinforcement Learning (MORL) algorithms, featuring state-of-the-art methods for training agents to optimize multiple objectives simultaneously as ISO Operators in power-grids management.
 
 ## 🎯 Overview
 
