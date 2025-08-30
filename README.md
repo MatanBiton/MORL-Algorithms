@@ -182,7 +182,7 @@ Email: matan.biton@campus.technion.ac.il
 GitHub: [@MatanBiton](https://github.com/MatanBiton)
 
 **Erel Hadad**
-Email: erel.hadad@campus.technion.ac.il
+Email: erel.hadad@campus.technion.ac.il  
 GitHub: [@erelhadad](https://github.com/erelhadad)
 
 ## 🙏 Acknowledgments
