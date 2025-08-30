@@ -181,7 +181,7 @@ This project is licensed under the terms specified in the LICENSE file.
 Email: matan.biton@campus.technion.ac.il  
 GitHub: [@MatanBiton](https://github.com/MatanBiton)
 
-**Erel Hadad**
+**Erel Hadad**  
 Email: erel.hadad@campus.technion.ac.il  
 GitHub: [@erelhadad](https://github.com/erelhadad)
 
