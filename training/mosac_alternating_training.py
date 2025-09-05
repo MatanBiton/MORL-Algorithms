@@ -9,8 +9,8 @@ print("Entered alternating training script")
 
 # Training parameters
 num_cycles = 5  # Number of alternating training cycles
-iso_training_episodes = 10  # Episodes per ISO training cycle
-pcs_training_timesteps = 1000  # Timesteps per PCS training cycle
+iso_training_episodes = 50000  # Episodes per ISO training cycle
+pcs_training_timesteps = 100000  # Timesteps per PCS training cycle
 
 # Initialize ISO environment without PCS agent
 print("Initializing ISO environment without PCS agent...")
