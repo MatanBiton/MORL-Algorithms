@@ -16,19 +16,9 @@ pcs_training_timesteps = 100000  # Timesteps per PCS training cycle
 print("Initializing ISO environment without PCS agent...")
 iso_env = MultiObjectiveISOEnv()
 
-# Initialize ISO agent
-print("Initializing ISO agent...")
-iso_agent = MOSAC(obs_dim=3, act_dim=2,
-                  act_low=iso_env.action_space.low,
-                  act_high=iso_env.action_space.high,
-                  objectives=2,
-                  hidden_sizes=(256,256,256),
-                  training_frequency=48,
-                  batch_size=512,
-                  use_cagrad=True,
-                  use_orthogonal_init=True,
-                  use_lr_annealing=True,
-                  lr_anneal_type="cosine")
+# Initialize ISO agent (will be recreated for each cycle with unique tensorboard logging)
+print("ISO agent will be initialized for each training cycle with unique tensorboard logging...")
+iso_agent = None
 
 # Initialize PCS agent (will be trained later)
 pcs_agent = None
@@ -37,6 +27,28 @@ print("Starting alternating training...")
 
 for cycle in range(num_cycles):
     print(f"\n=== Training Cycle {cycle + 1}/{num_cycles} ===")
+    
+    # Create new ISO agent for this cycle with unique tensorboard logging
+    print(f"Initializing ISO agent for cycle {cycle + 1} with tensorboard logging...")
+    tensorboard_filename = f"mosac_run_iter_{cycle + 1}"
+    
+    if iso_agent is not None:
+        # Close previous tensorboard writer before creating new one
+        iso_agent.writer.close()
+    
+    iso_agent = MOSAC(obs_dim=3, act_dim=2,
+                      act_low=iso_env.action_space.low,
+                      act_high=iso_env.action_space.high,
+                      objectives=2,
+                      hidden_sizes=(256,256,256),
+                      training_frequency=48,
+                      batch_size=512,
+                      use_cagrad=True,
+                      use_orthogonal_init=True,
+                      use_lr_annealing=True,
+                      lr_anneal_type="cosine",
+                      writer_filename=tensorboard_filename)
+    print(f"ISO agent initialized with tensorboard logging to: {tensorboard_filename}")
     
     # Phase 1: Train ISO agent
     print(f"Phase 1: Training ISO agent for {iso_training_episodes} episodes...")
@@ -55,6 +67,10 @@ for cycle in range(num_cycles):
     iso_save_path = f"trained_iso_cycle_{cycle + 1}.pth"
     iso_agent.save(iso_save_path)
     print(f"ISO agent saved to {iso_save_path}")
+    
+    # Close tensorboard writer for this cycle
+    iso_agent.writer.close()
+    print(f"Tensorboard logging for cycle {cycle + 1} closed")
     
     # Phase 2: Train PCS agent using current ISO agent
     print(f"Phase 2: Training PCS agent for {pcs_training_timesteps} timesteps...")
@@ -90,6 +106,12 @@ for cycle in range(num_cycles):
 print("\nSaving final models...")
 iso_agent.save("trained_iso.pth")
 pcs_agent.save("trained_pcs")
+
+# Ensure final tensorboard writer is closed
+if iso_agent and hasattr(iso_agent, 'writer') and iso_agent.writer:
+    iso_agent.writer.close()
+    print("Final tensorboard writer closed")
+
 print("Final models saved as 'trained_iso.pth' and 'trained_pcs'")
 
 print("Alternating training completed!")
