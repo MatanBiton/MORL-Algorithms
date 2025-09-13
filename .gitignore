@@ -204,3 +204,4 @@ logs/
 *runs/
 *.zip
 *.pth
+slurm-*
