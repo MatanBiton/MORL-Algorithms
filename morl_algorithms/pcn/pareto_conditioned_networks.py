@@ -49,7 +49,7 @@ def crowding_distance(points: np.ndarray) -> np.ndarray:
         return np.ones(len(points))
     
     # Normalize across dimensions to ensure equal scaling
-    points_norm = (points - points.min(axis=0)) / (points.ptp(axis=0) + 1e-8)
+    points_norm = (points - points.min(axis=0)) / (np.ptp(points,axis=0) + 1e-8)
     
     # Sort points per dimension
     dim_sorted = np.argsort(points_norm, axis=0)

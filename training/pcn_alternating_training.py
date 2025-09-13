@@ -9,7 +9,7 @@ print("Entered alternating training script")
 
 # Training parameters
 num_cycles = 5  # Number of alternating training cycles
-iso_training_episodes = 50000  # Episodes per ISO training cycle
+iso_training_episodes = 100000  # Episodes per ISO training cycle
 pcs_training_timesteps = 100000  # Timesteps per PCS training cycle
 
 # Initialize ISO environment without PCS agent
@@ -66,7 +66,7 @@ for cycle in range(num_cycles):
         iso_agent.train(iso_env, iso_training_episodes)
     
     # Save ISO agent after training
-    iso_save_path = f"trained_iso_cycle_{cycle + 1}.pth"
+    iso_save_path = f"pcn_trained_iso_cycle_{cycle + 1}.pth"
     iso_agent.save(iso_save_path)
     print(f"ISO agent saved to {iso_save_path}")
     
@@ -98,7 +98,7 @@ for cycle in range(num_cycles):
     pcs_agent.learn(total_timesteps=pcs_training_timesteps)
     
     # Save PCS agent after training
-    pcs_save_path = f"trained_pcs_cycle_{cycle + 1}"
+    pcs_save_path = f"pcn_trained_pcs_cycle_{cycle + 1}"
     pcs_agent.save(pcs_save_path)
     print(f"PCS agent saved to {pcs_save_path}")
     
@@ -106,8 +106,8 @@ for cycle in range(num_cycles):
 
 # Final save with standard names
 print("\nSaving final models...")
-iso_agent.save("trained_iso.pth")
-pcs_agent.save("trained_pcs")
+iso_agent.save("pcn_trained_iso.pth")
+pcs_agent.save("pcn_trained_pcs")
 
 # Ensure final tensorboard writer is closed
 if iso_agent and hasattr(iso_agent, 'writer') and iso_agent.writer:

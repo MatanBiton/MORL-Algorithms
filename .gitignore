@@ -206,3 +206,4 @@ logs/
 *.pth
 slurm-*
 final_models/
+pcn_run*/
