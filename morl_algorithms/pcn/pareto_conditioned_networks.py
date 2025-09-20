@@ -17,7 +17,9 @@ Key Features:
 - Direct policy learning conditioned on desired returns and horizons
 """
 
+import csv
 import heapq
+import os
 import random
 from collections import deque
 from typing import List, Tuple, Optional
@@ -734,43 +736,122 @@ class PCN:
         print(f"Training completed! Total episodes: {num_episodes}, Total updates: {update_count}")
         self.writer.flush()
     
-    def evaluate(self, env: gym.Env, episodes: int = 10, num_eval_points: int = 10) -> np.ndarray:
+    def evaluate(self, env: gym.Env, episodes: int = 10, log_info: bool = False, log_dir: str = "evaluation_logs") -> np.ndarray:
         """
-        Evaluate the agent by running episodes with different desired returns.
+        Evaluate the agent for a given number of episodes.
         
         Args:
             env: Environment to evaluate in
-            episodes: Number of episodes per evaluation point
-            num_eval_points: Number of different desired returns to evaluate
+            episodes: Number of episodes to run
+            log_info: Whether to log the info dict contents to CSV files (default: False)
+            log_dir: Directory to save the info logs (default: "evaluation_logs")
             
         Returns:
-            Array of achieved returns for each evaluation point
+            np.ndarray: Mean reward per objective across all episodes
         """
         if len(self.replay_buffer) == 0:
             print("Warning: No episodes in buffer for evaluation")
             return np.array([])
         
-        # Get diverse evaluation points from buffer
-        best_episodes = self.replay_buffer.get_best_episodes(num_eval_points)
-        eval_returns = []
+        rewards = []
         
-        for episode in best_episodes:
-            episode_returns = []
-            
-            # Extract desired return and horizon from this episode
-            desired_return = episode[0].reward
-            desired_horizon = float(len(episode))
-            
-            for _ in range(episodes):
-                transitions = self._run_episode(env, desired_return, desired_horizon)
-                achieved_return = transitions[0].reward
-                episode_returns.append(achieved_return)
-            
-            # Average over episodes for this evaluation point
-            avg_return = np.mean(episode_returns, axis=0)
-            eval_returns.append(avg_return)
+        # Create log directory if logging is enabled
+        if log_info:
+            os.makedirs(log_dir, exist_ok=True)
+            if self.verbose:
+                print(f"Info logging enabled. Logs will be saved to: {log_dir}")
         
-        return np.array(eval_returns)
+        for episode in range(episodes):
+            obs, _ = env.reset()
+            ep_reward = np.zeros(self.objectives, dtype=np.float32)
+            episode_info_log = []
+            
+            for step in range(self.max_steps):
+                action = self.predict(obs, deterministic=True)
+                obs, reward_vec, terminated, truncated, info = env.step(action)
+                ep_reward += reward_vec
+                
+                # Log info if enabled
+                if log_info and info:
+                    # Create a flat dictionary from info with step number
+                    info_entry = {'step': step}
+                    info_entry.update(self._flatten_dict(info))
+                    episode_info_log.append(info_entry)
+                
+                if terminated or truncated:
+                    break
+            
+            rewards.append(ep_reward)
+            
+            # Save episode info log to CSV if enabled
+            if log_info and episode_info_log:
+                self._save_episode_info_csv(episode_info_log, episode, log_dir)
+        
+        return np.mean(rewards, axis=0)
+    
+    def _flatten_dict(self, d, parent_key='', sep='_'):
+        """
+        Flatten a nested dictionary to have all keys at the top level.
+        
+        Args:
+            d: Dictionary to flatten
+            parent_key: Parent key for nested dictionaries
+            sep: Separator for nested keys
+        
+        Returns:
+            dict: Flattened dictionary
+        """
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(self._flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, (list, tuple)):
+                # Convert lists/tuples to strings for CSV compatibility
+                items.append((new_key, str(v)))
+            elif isinstance(v, (np.ndarray,)):
+                # Convert numpy arrays to strings for CSV compatibility
+                items.append((new_key, str(v.tolist()) if v.ndim > 0 else str(v)))
+            else:
+                items.append((new_key, v))
+        return dict(items)
+    
+    def _save_episode_info_csv(self, episode_info_log, episode_num, log_dir):
+        """
+        Save the episode info log to a CSV file.
+        
+        Args:
+            episode_info_log: List of info dictionaries for each step
+            episode_num: Episode number for filename
+            log_dir: Directory to save the CSV file
+        """
+        if not episode_info_log:
+            return
+            
+        filename = f"episode_{episode_num:04d}_info.csv"
+        filepath = os.path.join(log_dir, filename)
+        
+        try:
+            # Get all unique keys from all steps
+            all_keys = set()
+            for info_entry in episode_info_log:
+                all_keys.update(info_entry.keys())
+            all_keys = sorted(list(all_keys))
+            
+            # Write CSV file
+            with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=all_keys)
+                writer.writeheader()
+                for info_entry in episode_info_log:
+                    # Fill missing keys with empty values
+                    row = {key: info_entry.get(key, '') for key in all_keys}
+                    writer.writerow(row)
+            
+            if self.verbose:
+                print(f"Saved episode {episode_num} info log to: {filepath}")
+                
+        except Exception as e:
+            print(f"Warning: Failed to save episode {episode_num} info log: {e}")
     
     def set_desired_return_and_horizon(self, desired_return: np.ndarray, desired_horizon: float):
         """Set desired return and horizon for subsequent action predictions."""

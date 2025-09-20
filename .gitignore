@@ -208,3 +208,4 @@ slurm-*
 final_models/
 pcn_run*/
 mosac_run*/
+eval_res/
