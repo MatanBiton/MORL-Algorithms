@@ -7,6 +7,8 @@ from EnergyNetMoISO.MoISOEnv import MultiObjectiveISOEnv
 from stable_baselines3.ppo import PPO
 from energy_net.env.pcs_unit_v0 import PCSUnitEnv
 
+from evaluating.produce_results import *
+
 
 def set_up_arg_parser():
     parser = argparse.ArgumentParser(description='Python Script for alternating training an ISO Multi Objective Agent')
@@ -181,11 +183,17 @@ def train(parser, agent_creation:Callable):
 
     print("Alternating training completed!")
 
+    return iso_agent, pcs_agent
+
 def main():
     parser = set_up_arg_parser()
     args = parser.parse_args()
     creator = mosac_creation if args.algo == 'mosac' else pcn_creation
-    trained_agent = train(args, creator)
+    trained_agent, trained_pcs = train(args, creator)
+
+    produce_eval_data(trained_agent, trained_pcs)
+
+    generate_graph(log_path='C:\Coding\MORL-Algorithms\evaluation_logs\episode_0000_info.csv')
     
     
 
