@@ -749,10 +749,6 @@ class PCN:
         Returns:
             np.ndarray: Mean reward per objective across all episodes
         """
-        if len(self.replay_buffer) == 0:
-            print("Warning: No episodes in buffer for evaluation")
-            return np.array([])
-        
         rewards = []
         
         # Create log directory if logging is enabled
