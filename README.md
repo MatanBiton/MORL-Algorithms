@@ -1,4 +1,4 @@
-# MORL-Algorithms (outdated as of 20/9)
+# MORL-Algorithms
 
 A comprehensive implementation of Multi-Objective Reinforcement Learning (MORL) algorithms, featuring state-of-the-art methods for training agents to optimize multiple objectives simultaneously as ISO Operators in power-grids management.
 
@@ -61,64 +61,84 @@ pip install -e .
 
 ## 🎮 Usage
 
-### Training MOSAC Agent
+### Training with Alternating Training Script
 
-```python
-from morl_algorithms.mosac.multi_objective_sac import MOSAC
-from your_environment import YourMultiObjectiveEnv
+The primary way to train agents in this repository is through the `alternating_training.py` script, which implements a sophisticated alternating training strategy between ISO (Independent System Operator) and PCS (Power Conversion System) agents.
 
-# Create environment
-env = YourMultiObjectiveEnv()
+#### Basic Usage
 
-# Initialize MOSAC agent
-agent = MOSAC(
-    obs_dim=env.observation_space.shape[0],
-    act_dim=env.action_space.shape[0],
-    act_low=env.action_space.low,
-    act_high=env.action_space.high,
-    objectives=2,  # Number of objectives
-    hidden_sizes=(256, 256, 256),
-    batch_size=512,
-    use_cagrad=True,  # Enable CAGrad optimization
-    use_orthogonal_init=True,
-    use_lr_annealing=True
-)
+```bash
+# Train MOSAC algorithm with default settings
+python training/alternating_training.py --algo mosac
 
-# Train the agent
-agent.train(env, episodes=1000)
+# Train PCN algorithm with default settings  
+python training/alternating_training.py --algo pcn
 
-# Save trained model
-agent.save("trained_model.pth")
+# Train with dispatch actions enabled
+python training/alternating_training.py --algo mosac --disp
 ```
 
-### Training PCN Agent
+#### Advanced Configuration
 
-```python
-from morl_algorithms.pcn.pareto_conditioned_networks import PCN
-import numpy as np
+```bash
+# Train MOSAC with optimization features
+python training/alternating_training.py \
+    --algo mosac \
+    --cycles 10 \
+    --iso_episodes 150000 \
+    --pcs_timesteps 200000 \
+    --hidden 512 512 512 \
+    --batch 1024 \
+    --cagrad \
+    --orth_init \
+    --lr_anneal cosine
 
-# Create PCN agent
-agent = PCN(
-    env=env,
-    objectives=2,
-    hidden_sizes=(256, 256, 256),
-    learning_rate=3e-4,
-    batch_size=256,
-    buffer_capacity=100,
-    scaling_factor=np.array([0.01, 0.01, 0.001])
-)
-
-# Train the agent
-agent.train(episodes=1000)
+# Train PCN with custom parameters
+python training/alternating_training.py \
+    --algo pcn \
+    --cycles 8 \
+    --iso_episodes 100000 \
+    --pcs_timesteps 150000 \
+    --hidden 256 256 256 \
+    --batch 256 \
+    --train_freq 24
 ```
 
-## 📊 Training Scripts
+#### Command Line Arguments
 
-The repository includes ready-to-use training scripts in the `training/` directory:
+- `--algo`: Choose algorithm (`mosac` or `pcn`)
+- `--disp`: Enable dispatch action for ISO agent
+- `--cycles`: Number of alternating training cycles (default: 5)
+- `--iso_episodes`: Episodes for ISO training per cycle (default: 100,000)
+- `--pcs_timesteps`: Timesteps for PCS training per cycle (default: 100,000)
+- `--hidden`: Hidden layer dimensions (default: [256, 256, 256])
+- `--batch`: Batch size for training (default: 512)
+- `--train_freq`: Training frequency in steps (default: 48)
 
-- `mosac_energynet.py`: MOSAC training on EnergyNet environment
-- `pcn_energynet.py`: PCN training on EnergyNet environment  
-- `mosac_alternating_training.py`: Advanced MOSAC training with alternating strategies
+**MOSAC-specific optimizations:**
+- `--cagrad`: Enable CAGrad optimization
+- `--orth_init`: Use orthogonal initialization
+- `--lr_anneal`: Learning rate annealing (`cosine`)
+
+#### Training Process
+
+The alternating training script performs the following steps:
+
+1. **Initialization**: Sets up the multi-objective ISO environment
+2. **Alternating Cycles**: For each training cycle:
+   - **Phase 1**: Train ISO agent using MOSAC or PCN
+   - **Phase 2**: Train PCS agent (PPO) using the current ISO agent
+3. **Model Saving**: Saves trained models after each cycle and final models
+4. **Evaluation**: Automatically generates evaluation data and graphs
+
+#### Output Files
+
+After training, the script generates:
+- `{algo}_trained_iso.pth`: Final trained ISO agent
+- `{algo}_trained_pcs.zip`: Final trained PCS agent  
+- `{algo}_trained_iso_cycle_{i}.pth`: ISO models from each cycle
+- `{algo}_trained_pcs_cycle_{i}.zip`: PCS models from each cycle
+- Evaluation logs and performance graphs
 
 ## 🔧 Key Features
 
@@ -137,15 +157,22 @@ The repository includes ready-to-use training scripts in the `training/` directo
 
 ## 📈 Monitoring
 
-Training progress is automatically logged using TensorBoard:
+Training progress is automatically logged using TensorBoard. The alternating training script creates separate logs for each training cycle:
 
 ```bash
-# View MOSAC training logs
-tensorboard --logdir mosac_runs/
+# View MOSAC training logs for specific cycle
+tensorboard --logdir mosac_run_iter_1/
+tensorboard --logdir mosac_run_iter_2/
 
-# View PCN training logs  
-tensorboard --logdir pcn_runs/
+# View PCN training logs for specific cycle  
+tensorboard --logdir pcn_run_iter_1/
+tensorboard --logdir pcn_run_iter_2/
+
+# View all training runs
+tensorboard --logdir ./
 ```
+
+The script also generates evaluation graphs and CSV files in the `evaluation_logs/` directory after training completion.
 
 ## 🔬 Research Background
 
