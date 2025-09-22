@@ -209,3 +209,4 @@ final_models/
 pcn_run*/
 mosac_run*/
 eval_res/
+evaluation_logs/

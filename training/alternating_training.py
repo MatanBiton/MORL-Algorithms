@@ -53,10 +53,7 @@ def set_up_arg_parser():
                         help='use orthogonal initilazation optimization')
     
 
-    # Other
-    # parser.add_argument('--writer', action='store', required=True,
-    #                     help='name to write logs under {alg}_run_iter{i} dir')
-    
+
     return parser
 
 
